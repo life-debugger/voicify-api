@@ -1,19 +1,36 @@
+شfrom django.contrib.auth import get_user_model, authenticate
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
+import accounts.models
 from api import models
 
 
 @csrf_exempt
-def index(request):
-    title = 'the post title'
-    voice = request.FILES['voice']
-    post = models.Post.objects.create(title='new stuff', voice=voice)
+def upload_new_post(request):
+    print(request.POST)
+    print(request.FILES)
 
-    return HttpResponse("hello from api")
+    title = request.POST['title']
+    voice = request.FILES['voice']
+    try:
+        models.Post.objects.create(title=title, voice=voice)
+        return JsonResponse(
+            {
+                'status': 'success',
+                'msg': 'Your post was uploaded successfully',
+            }
+        )
+
+    except Exception as e:
+        return JsonResponse(
+            {
+                'status': 'fail',
+                'msg': 'something went wrong',
+            })
 
 
 def get_latest_post(request):
@@ -24,7 +41,7 @@ def get_latest_post(request):
 
 def get_five_posts(request):
     posts = models.Post.objects.all()
-    last_five_posts = posts[len(posts)-3:]
+    last_five_posts = posts[len(posts) - 3:]
     posts = []
     for p in last_five_posts:
         r = {'postID': p.id, 'title': p.title, 'voice': request.build_absolute_uri(p.voice.url)}
@@ -33,10 +50,62 @@ def get_five_posts(request):
     return JsonResponse({'posts': posts})
 
 
-def get_posts():
-    all_posts = models.Post.objects.all()
-    for post in all_posts:
-        print(post)
-        print(post.title)
-        print(vars(post.voice))
+def login_view(request):
+    return HttpResponse("login view")
 
+
+@csrf_exempt
+def signup_view(request):
+    print(request.POST)
+    get_user_model().objects.create_user(
+        username=request.POST['username'],
+        email=request.POST['email'],
+        name=request.POST['name'],
+        password=request.POST['password'],
+    )
+
+    return HttpResponse("signup view")
+
+
+@csrf_exempt
+def login_view(request):
+    user = authenticate(username=request.POST['username'], password=request.POST['password'])
+    if user is not None:
+        return JsonResponse(
+            {
+                'status': 'success',
+                'msg': 'Login was successful',
+                'user': user.username,
+            }
+        )
+    else:
+        return JsonResponse(
+            {
+                'status': 'fail',
+                'msg': 'username or password was wrong',
+            })
+
+
+@csrf_exempt
+def get_user(request):
+    username = request.POST['username']
+    try:
+        user = accounts.models.VoicifyUser.objects.get(username=username)
+        json_user = {
+            "username": user.username,
+            "name": user.name,
+            "email": user.email
+        }
+        r = {
+            'status': 'success',
+            'msg': 'the user with {} username was found'.format(username),
+            'user': json_user
+        }
+
+    except accounts.models.VoicifyUser.DoesNotExist as e:
+        r = {
+            'status': 'fail',
+            'msg': 'the user with {} username was not found'.format(username),
+        }
+
+    return JsonResponse(r)

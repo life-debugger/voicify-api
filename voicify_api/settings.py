@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'api',
+    'accounts',
     "corsheaders",
     'django.contrib.admin',
     'django.contrib.auth',
@@ -136,3 +137,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media_root")
 #     'http://localhost:3000',
 #     'http://localhost:3001',
 # ]
+
+AUTH_USER_MODEL = 'accounts.VoicifyUser'
+
