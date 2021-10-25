@@ -11,13 +11,13 @@ from api import models
 
 @csrf_exempt
 def upload_new_post(request):
-    print(request.POST)
-    print(request.FILES)
-
-    title = request.POST['title']
-    voice = request.FILES['voice']
     try:
-        models.Post.objects.create(title=title, voice=voice)
+        title = request.POST['title']
+        voice = request.FILES['voice']
+        username = request.POST['username']
+        user = accounts.models.VoicifyUser.objects.get(username=username)
+        post = models.Post.objects.create(title=title, voice=voice, owner=user)
+        user.posts.add(post)
         return JsonResponse(
             {
                 'status': 'success',
@@ -91,10 +91,12 @@ def get_user(request):
     username = request.POST['username']
     try:
         user = accounts.models.VoicifyUser.objects.get(username=username)
+        avatar = user.avatar.url if user.avatar else ""
         json_user = {
             "username": user.username,
             "name": user.name,
-            "email": user.email
+            "email": user.email,
+            "avatar": request.build_absolute_uri(avatar)
         }
         r = {
             'status': 'success',
@@ -107,5 +109,41 @@ def get_user(request):
             'status': 'fail',
             'msg': 'the user with {} username was not found'.format(username),
         }
+
+    return JsonResponse(r)
+
+
+@csrf_exempt
+def update_user(request):
+    try:
+        username = request.POST.get('username', None)
+        name = request.POST.get('name', None)
+        email = request.POST.get('email', None)
+        user = get_user_model().objects.get(username=username)
+        avatar = request.FILES.get('avatar', None)
+        print("AVATAR:", avatar)
+        print("POST:", len(request.POST))
+        print("FILES:", len(request.FILES))
+        print("FILE:", request.FILES.get("avatar"))
+        if name:
+            user.name = name
+        if email:
+            user.email = email
+        if avatar:
+            user.avatar = avatar
+
+        user.save()
+
+        r = {
+            'status': 'success',
+            'msg': 'profile was updated successfully'
+        }
+
+    except Exception as e:
+        r = {
+            'status': 'fail',
+            'msg': 'something went wrong please try again later'
+        }
+        raise e
 
     return JsonResponse(r)

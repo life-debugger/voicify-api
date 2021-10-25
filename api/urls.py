@@ -10,4 +10,5 @@ urlpatterns = [
     path('latest_post', views.get_latest_post),
     path('last_five_posts', views.get_five_posts),
     path('get_user', views.get_user),
+    path('update_user', views.update_user),
 ]

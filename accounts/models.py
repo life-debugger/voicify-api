@@ -3,6 +3,8 @@ from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser
 )
 
+from api import models as api_models
+
 
 class MyUserManager(BaseUserManager):
     def create_user(self, username, name, email, password=None):
@@ -38,6 +40,10 @@ class VoicifyUser(AbstractBaseUser):
         verbose_name='email address',
         max_length=255,
     )
+
+    posts = models.ManyToManyField(api_models.Post)
+    avatar = models.ImageField(upload_to='avatars', blank=True)
+
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
 
